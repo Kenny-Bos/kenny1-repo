@@ -1,31 +1,453 @@
-mkdir shoe-shop
-cd shoe-shop
-
-cat > index.html <<'EOF'
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>My Shoe is for sell,please my shop <title>
-
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>Smart Door Security System</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-<body style="text-align:center; background:#f2f2f2;">
+<body>
 
-    <h1>WELCOME TO MY SHOE SHOP</h1>
+<div class="container">
 
-    <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff"
-         width="400"
-         alt="Red Nike Shoe">
+    <h1>SMART AUTOMATIC DOOR</h1>
+    <p>Fingerprint Security Management System</p>
 
-    <h2>Beautiful Sports Shoe</h2>
+    <!-- Login Page -->
+    <section id="loginPage">
+        <h2>Administrator Login</h2>
 
-    <p>Price: ₦25,000</p>
-    <button>BUY NOW</button>
+        <input type="text" id="username"
+               placeholder="Username">
 
+        <input type="password" id="password"
+               placeholder="Password">
+
+        <button onclick="login()">Login</button>
+
+        <p id="loginMessage"></p>
+    </section>
+
+    <!-- Main Dashboard -->
+    <section id="dashboard" class="hidden">
+
+        <h2>Security Control Dashboard</h2>
+
+        <p id="clock"></p>
+
+        <div class="door-frame">
+            <div id="leftDoor" class="door left"></div>
+            <div id="rightDoor" class="door right"></div>
+        </div>
+
+        <h2 id="doorStatus">DOOR LOCKED</h2>
+
+        <div class="panel">
+            <h3>Fingerprint Scanner</h3>
+
+            <div class="fingerprint">☝️</div>
+
+            <button onclick="scanFingerprint()">
+                Scan Authorized Fingerprint
+            </button>
+
+            <button onclick="denyFingerprint()">
+                Scan Unknown Fingerprint
+            </button>
+        </div>
+
+        <div class="panel">
+            <h3>PIN Authentication</h3>
+
+            <input type="password" id="pin"
+                   placeholder="Enter PIN">
+
+            <button onclick="verifyPIN()">
+                Unlock Door
+            </button>
+        </div>
+
+        <div class="panel">
+            <h3>Register User</h3>
+
+            <input type="text" id="newUser"
+                   placeholder="Enter User Name">
+
+            <button onclick="registerUser()">
+                Register User
+            </button>
+
+            <ul id="userList"></ul>
+        </div>
+
+        <h3 id="message">System Ready</h3>
+
+        <div class="panel">
+            <h2>Security Dashboard</h2>
+
+            <p>Successful Access:
+                <span id="successCount">0</span>
+            </p>
+
+            <p>Denied Access:
+                <span id="deniedCount">0</span>
+            </p>
+
+            <h3>Access History</h3>
+            <ul id="history"></ul>
+        </div>
+
+        <button onclick="logout()">Logout</button>
+
+    </section>
+
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>
-EOF
+```
 
+DMIN_PASSWORD = "admin123";
+const ACCESS_PIN = "1234";
+
+// ADMINISTRATOR LOGIN
+function login() {
+
+    const username =
+        document.getElementById("username").value;
+
+    const password =
+        document.getElementById("password").value;
+
+    if (
+        username === ADMIN_USERNAME &&
+        password === ADMIN_PASSWORD
+    ) {
+
+        loggedIn = true;
+
+        loginPage.classList.add("hidden");
+        dashboard.classList.remove("hidden");
+
+        document.getElementById("password").value = "";
+
+        addHistory("Administrator Logged In");
+
+    } else {
+
+        document.getElementById("loginMessage").textContent =
+            "Invalid Username or Password";
+    }
+}
+
+
+// LOGOUT
+function logout() {
+
+    loggedIn = false;
+
+    clearTimeout(closeTimer);
+    clearTimeout(scanTimer);
+
+    closeDoor();
+
+    dashboard.classList.add("hidden");
+    loginPage.classList.remove("hidden");
+
+    document.getElementById("password").value = "";
+}
+
+
+// REAL-TIME CLOCK
+function updateClock() {
+
+    document.getElementById("clock").textContent =
+        new Date().toLocaleString();
+}
+
+setInterval(updateClock, 1000);
+updateClock();
+
+
+// ACCESS HISTORY
+function addHistory(event) {
+
+    const item = document.createElement("li");
+
+    item.textContent =
+        new Date().toLocaleTimeString() + " - " + event;
+
+    historyList.prepend(item);
+}
+
+
+// OPEN AUTOMATIC DOOR
+function openDoor(method) {
+
+    if (!loggedIn) return;
+
+    clearTimeout(closeTimer);
+
+    successfulAccess++;
+
+    successCount.textContent = successfulAccess;
+
+    leftDoor.classList.add("open");
+    rightDoor.classList.add("open");
+
+    doorStatus.textContent = "DOOR OPEN";
+    doorStatus.style.color = "#00ff99";
+
+    message.textContent =
+        "ACCESS GRANTED - " + method;
+
+    message.style.color = "#00ff99";
+
+    addHistory("Access Granted via " + method);
+
+    closeTimer = setTimeout(closeDoor, 5000);
+}
+
+
+// CLOSE AUTOMATIC DOOR
+function closeDoor() {
+
+    leftDoor.classList.remove("open");
+    rightDoor.classList.remove("open");
+
+    doorStatus.textContent = "DOOR LOCKED";
+    doorStatus.style.color = "white";
+
+    message.textContent = "Door Closed Automatically";
+    message.style.color = "#00e6ff";
+
+    addHistory("Door Closed");
+}
+
+
+// SIMULATED AUTHORIZED FINGERPRINT
+function scanFingerprint() {
+
+    if (!loggedIn) return;
+
+    clearTimeout(scanTimer);
+
+    message.textContent = "Scanning Fingerprint...";
+    message.style.color = "yellow";
+
+    scanTimer = setTimeout(() => {
+
+        if (loggedIn) {
+            openDoor("Fingerprint");
+        }
+
+    }, 1500);
+}
+
+
+// SIMULATED UNKNOWN FINGERPRINT
+function denyFingerprint() {
+
+    if (!loggedIn) return;
+
+    clearTimeout(scanTimer);
+
+    message.textContent = "Scanning Fingerprint...";
+    message.style.color = "yellow";
+
+    scanTimer = setTimeout(() => {
+
+        if (loggedIn) {
+            denyAccess("Unknown Fingerprint");
+        }
+
+    }, 1500);
+}
+
+
+// VERIFY PIN
+function verifyPIN() {
+
+    if (!loggedIn) return;
+
+    const pinInput = document.getElementById("pin");
+    const enteredPIN = pinInput.value;
+
+    pinInput.value = "";
+
+    if (enteredPIN === ACCESS_PIN) {
+
+        openDoor("PIN");
+
+    } else {
+
+        denyAccess("Incorrect PIN");
+    }
+}
+
+
+// DENY ACCESS
+function denyAccess(reason) {
+
+    if (!loggedIn) return;
+
+    deniedAccess++;
+
+    deniedCount.textContent = deniedAccess;
+
+    message.textContent =
+        "ACCESS DENIED - " + reason;
+
+    message.style.color = "#ff5252";
+
+    addHistory("Access Denied: " + reason);
+
+    // A denied attempt does not change door movement.
+    playAlarm();
+}
+
+
+// REGISTER USER
+function registerUser() {
+
+    if (!loggedIn) return;
+
+    const input = document.getElementById("newUser");
+    const name = input.value.trim();
+
+    if (name === "") {
+
+        alert("Please enter a user name");
+        return;
+    }
+
+    registeredUsers.push(name);
+
+    const item = document.createElement("li");
+    item.textContent = name;
+
+    userList.appendChild(item);
+
+    addHistory("New User Registered: " + name);
+
+    input.value = "";
+
+    alert("User Registered Successfully");
+}
+
+
+// ALARM SOUND
+function playAlarm() {
+
+    try {
+
+        const AudioContextClass =
+            window.AudioContext ||
+            window.webkitAudioContext;
+
+        if (!AudioContextClass) return;
+
+        const audioContext = new AudioContextClass();
+
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+
+        oscillator.type = "sine";
+        oscillator.frequency.value = 700;
+
+        gain.gain.value = 0.08;
+
+        oscillator.connect(gain);
+        gain.connect(audioContext.destination);
+
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.3);
+
+        oscillator.onended = () => audioContext.close();
+
+    } catch (error) {
+
+        console.log("Audio unavailable:", error);
+    }
+}
+```
+
+## STEP 5: Run Your Project
+
+After saving the three files, return to Git Bash.
+
+Enter:
+
+```bash
 start index.html
-:qw
-:qw
+```
+
+Your automatic door security application should open in your default browser.
+
+### Administrator Login Details
+
+For this demonstration, use:
+
+| Field    | Value      |
+| -------- | ---------- |
+| Username | `admin`    |
+| Password | `admin123` |
+| Door PIN | `1234`     |
+
+These credentials are hardcoded and visible in the browser's JavaScript. They are strictly for simulation, not real building security.
+
+## STEP 6: Test Your Automatic Door
+
+After logging in, test the following:
+
+| Action                          | Expected Result             |
+| ------------------------------- | --------------------------- |
+| Authorized fingerprint button   | Door opens                  |
+| Unknown fingerprint button      | Access denied               |
+| Correct PIN `1234`              | Door opens                  |
+| Incorrect PIN                   | Access denied               |
+| Register a user                 | Name appears in user list   |
+| Wait five seconds after opening | Door closes                 |
+| Check dashboard                 | Access history is displayed |
+| Logout                          | Returns to login page       |
+
+**Important:** User registration currently saves names only in the browser's temporary memory. It does not enroll fingerprints or permanently store users. The application also has no real authentication backend or physical door safety controls.
+
+## STEP 7: Save Your Code Using Git Bash
+
+Execute these commands:
+
+```bash
+git add .
+git commit -m "Build smart automatic fingerprint door security system"
+```
+
+To verify:
+
+```bash
+git status
+```
+
+If the commit succeeds, your project is saved in your local Git repository.
+
+---
+
+### What You Have Built
+
+You now have a working **software simulation of an automatic fingerprint door security system** featuring:
+
+* Administrator login
+* Animated sliding door
+* Simulated fingerprint scanning
+* PIN authentication
+* User registration
+* Automatic door closing
+* Access history
+* Security dashboard
+* Unauthorized-access alarm
+
+**Your next step:** Run `start index.html` in Git Bash and test the administrator login using `admin` and `admin123`.
+
 
